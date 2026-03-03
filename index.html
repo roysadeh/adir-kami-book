@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>עלילות אדיר, קאמי ועכברושית</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a0f0a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Heebo', sans-serif;
+      padding: 20px;
+    }
+
+    .book-wrap {
+      width: 100%;
+      max-width: 980px;
+    }
+
+    /* ── COVER ── */
+    #cover {
+      background: linear-gradient(160deg, #2c1810 0%, #4a2c1a 50%, #1a0f0a 100%);
+      border: 8px solid #8b6914;
+      border-radius: 6px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.4);
+      padding: 70px 50px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: calc(100vh - 80px);
+      max-height: 760px;
+      min-height: 520px;
+    }
+
+    #cover::before {
+      content: '';
+      position: absolute;
+      inset: 16px;
+      border: 1.5px solid rgba(139,105,20,0.45);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    .cover-ornament {
+      color: #8b6914;
+      font-size: 1.4rem;
+      letter-spacing: 12px;
+      margin: 16px 0;
+    }
+
+    .cover-title {
+      color: #f5d87a;
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.25;
+      text-shadow: 0 2px 14px rgba(0,0,0,0.9), 0 0 40px rgba(245,216,122,0.2);
+      margin: 4px 0;
+    }
+
+    .cover-tagline {
+      color: #9a7838;
+      font-size: 1rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      margin: 10px 0 40px;
+    }
+
+    .cover-btn {
+      background: linear-gradient(135deg, #7a5c10, #c4a24a, #7a5c10);
+      color: #1a0f0a;
+      border: none;
+      padding: 15px 52px;
+      font-size: 1.15rem;
+      font-family: 'Heebo', sans-serif;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.05em;
+    }
+
+    .cover-btn:hover {
+      background: linear-gradient(135deg, #c4a24a, #f5d87a, #c4a24a);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(139,105,20,0.5);
+    }
+
+    /* ── PAGE — fixed total height so it never jumps ── */
+    .page {
+      display: none;
+      flex-direction: column;
+      background: #f5ede0;
+      border: 6px solid #8b6914;
+      border-radius: 6px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.9);
+      overflow: hidden;
+      height: calc(100vh - 80px);
+      max-height: 760px;
+      min-height: 520px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .page.active  { display: flex; }
+    .page.visible { opacity: 1; }
+
+    /* Header strip */
+    .page-header {
+      background: linear-gradient(135deg, #2c1810, #3d2015, #2c1810);
+      border-bottom: 3px solid #8b6914;
+      padding: 12px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      direction: rtl;
+      flex-shrink: 0;
+    }
+
+    .ch-title { color: #f5d87a; font-size: 1rem; font-weight: 700; }
+    .pg-num   { color: #a08040; font-size: 0.82rem; letter-spacing: 0.05em; }
+    .bk-title { color: #6a5028; font-size: 0.75rem; font-weight: 300; }
+
+    /* Body — image LEFT, text RIGHT — fills remaining height */
+    .page-body {
+      display: flex;
+      flex-direction: row;
+      direction: ltr;
+      flex: 1;
+      min-height: 0;  /* FIX 4: let flex shrink properly */
+      overflow: hidden;
+    }
+
+    .page-image {
+      flex: 6;
+      overflow: hidden;
+      background: #1a0f0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* FIX 1: show placeholder text when image is missing */
+    .page-image img[src=""] ,
+    .page-image img:not([src]) {
+      display: none;
+    }
+
+    .page-text {
+      flex: 4;
+      padding: 32px 28px;
+      background: #f9f3e8;
+      border-left: 3px solid #ddd0b0;
+      direction: rtl;
+      /* FIX 4: scroll text if it overflows instead of growing page */
+      overflow-y: auto;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .page-text p {
+      color: #2c1810;
+      font-size: clamp(0.92rem, 1.5vw, 1.08rem);
+      line-height: 2.05;
+      white-space: pre-line;
+    }
+
+    /* Footer nav */
+    .page-nav {
+      background: linear-gradient(135deg, #2c1810, #3d2015, #2c1810);
+      border-top: 3px solid #8b6914;
+      padding: 13px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      /* FIX 2: ltr so first child = left, last child = right */
+      direction: ltr;
+      flex-shrink: 0;
+    }
+
+    .nav-btn {
+      background: linear-gradient(135deg, #7a5c10, #c4a24a);
+      color: #1a0f0a;
+      border: none;
+      padding: 9px 24px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 110px;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #c4a24a, #f5d87a);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn:disabled {
+      background: #3a2a10;
+      color: #5a4a28;
+      cursor: default;
+      transform: none;
+    }
+
+    .dots {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 220px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #4a3a18;
+      border: 1px solid #7a6028;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .dot.on {
+      background: #f5d87a;
+      transform: scale(1.3);
+      border-color: #f5d87a;
+    }
+
+    /* ── RESPONSIVE — mobile ── */
+    @media (max-width: 640px) {
+      body { padding: 8px; }
+
+      #cover {
+        height: auto;
+        min-height: 92vh;
+        max-height: none;
+        padding: 50px 24px;
+      }
+
+      .page {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+      }
+
+      .page-header { padding: 10px 14px; }
+      .ch-title    { font-size: 0.85rem; }
+      .pg-num      { font-size: 0.75rem; }
+      .bk-title    { display: none; }
+
+      .page-body {
+        flex-direction: column;
+        direction: rtl;
+        overflow: visible;
+      }
+
+      .page-image {
+        flex: none;
+        width: 100%;
+      }
+
+      .page-image img {
+        height: auto;
+        object-fit: contain;
+      }
+
+      .page-text {
+        flex: none;
+        border-left: none;
+        border-top: 3px solid #ddd0b0;
+        padding: 20px 16px;
+        overflow-y: visible;
+      }
+
+      .page-nav { padding: 10px 14px; }
+      .nav-btn  { min-width: 80px; padding: 8px 14px; font-size: 0.82rem; }
+      .dots     { gap: 5px; max-width: 160px; }
+      .dot      { width: 7px; height: 7px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="book-wrap">
+
+  <!-- COVER -->
+  <div id="cover">
+    <div class="cover-ornament">✦  ✦  ✦</div>
+    <div class="cover-title">עלילות אדיר,<br>קאמי<br>ועכברושית</div>
+    <div class="cover-ornament">✦  ✦  ✦</div>
+    <div class="cover-tagline">סיפור על אהבה, בגידה, וביוב</div>
+    <button class="cover-btn" onclick="startBook()">קרא את הסיפור ◄</button>
+  </div>
+
+  <!-- PAGES (built by JS) -->
+  <div id="pages-wrap"></div>
+
+</div>
+
+<script>
+const PAGES = [
+  {
+    chapter: "פרק א׳ – המועדון",
+    image: "images/page1.jpg",
+    text: `זה התחיל בערב אחד אקראי לגמרי.
+נכנסתי למועדון בלי תוכנית. אורות מהבהבים, בס חזק מדי, אנשים שמחפשים משהו.
+
+ואז ראיתי אותו.
+קאמי.
+גמל עם ביטחון שקט. כזה שלא צריך להתאמץ.
+
+ניגשתי אליו ואמרתי:
+"מה אתה שותה?"
+הזמנתי לנו דרינק.
+
+חשבתי שזה עוד ערב.
+
+לא ידעתי שזה יהפוך לסיפור שלי.`
+  },
+  {
+    chapter: "פרק ב׳ – במיטה במקלט",
+    image: "images/page2.jpg",
+    text: `באותו לילה חזרנו הביתה ביחד.
+לא דירה נוצצת.
+
+מקלט.
+העולם בחוץ היה מתוח.
+
+אבל שם למטה היה שקט.
+שכבנו מתחת לשמיכה הירוקה.
+
+הוא נרדם לפניי.
+אני הסתכלתי עליו וחשבתי —
+
+איך מישהו כל כך מוזר יכול להרגיש לי כמו בית?
+בפעם הראשונה מזה הרבה זמן, הרגשתי בטוח.`
+  },
+  {
+    chapter: "פרק ג׳ – המדבר",
+    image: "images/page3.jpg",
+    text: `נסענו למדבר. ספונטני, כמו שאנחנו אוהבים.
+ופתאום ראיתי אותו.
+עם גמלה אחרת.
+לבבות מעל הראש שלהם.
+
+ואני עומד שם, מרגיש איך משהו בי נשבר.
+לא צרחתי.
+
+רק שאלתי בשקט:
+"מה זה?"
+והוא שתק.
+
+והשקט הזה כאב יותר מכל תשובה.`
+  },
+  {
+    chapter: "פרק ד׳ – הביוב",
+    image: "images/page4.jpg",
+    text: `כשנשבר לי הלב, ירדתי נמוך.
+מצאתי את עצמי יושב בביוב, מוקף עכברושים.
+
+רטוב. עייף. ריק.
+חשבתי שזה הסוף שלי.
+
+ואז ראיתי אותה.`
+  },
+  {
+    chapter: "פרק ה׳ – הדייט",
+    image: "images/page5.jpg",
+    text: `היא הייתה אחרת.
+פנים של עכברושית, גוף של אישה, מבט חכם ועדין.
+
+היא לא שאלה על העבר. לא חיטטה בפצעים.
+יצאנו לדייט.
+
+אור נרות. צחוק אמיתי.
+הרגשתי שמישהו רואה אותי — לא כהחלפה, לא כבריחה.
+
+אלא כבחירה.
+חשבתי: אולי זאת ההתחלה החדשה שלי.`
+  },
+  {
+    chapter: "פרק ו׳ – קאמי מנסה לחזור",
+    image: "images/page6.jpg",
+    text: `ופתאום — הוא הופיע.
+קאמי.
+עמד שם, מסתכל עליי יושב מולה.
+
+העיניים שלו כבר לא היו בטוחות בעצמן.
+הוא ניגש אליי ואמר:
+
+"אדיר… תחזור."
+לרגע הלב שלי קפץ.
+
+הזיכרונות. המקלט. הלילה הראשון.
+אבל אז נזכרתי במדבר.
+
+בלבבות. בשקט.
+הסתכלתי עליו ואמרתי:
+
+"אני לא חוזר למקום ששבר אותי."
+והוא נשאר שם.
+
+ואני בחרתי להמשיך.`
+  },
+  {
+    chapter: "פרק ז׳ – החופה",
+    image: "images/page7.jpg",
+    text: `עמדנו מתחת לחופה.
+שנינו בשמלות כלה.
+
+כי אם כבר לבחור — אז עד הסוף.
+טבעות. מחיאות כפיים. חיוכים.
+
+אמרתי לעצמי:
+אני לא בורח יותר. אני בונה.`
+  },
+  {
+    chapter: "פרק ח׳ – ההריון",
+    image: "images/page8.jpg",
+    text: `כשהיא סיפרה לי שהיא בהריון, הייתי המאושר באדם.
+שמתי יד על הבטן שלה.
+
+דמיינתי עתיד.
+לא שאלתי שאלות.
+
+רק בחרתי להאמין.`
+  },
+  {
+    chapter: "פרק ט׳ – הלידה",
+    image: "images/page9.jpg",
+    text: `ואז הוא נולד.
+קטן. מתוק.
+חצי עכברוש.
+
+חצי גמל.
+והלב שלי שקע.
+
+ידעתי.
+לא הייתי צריך בדיקה.
+
+הבנתי הכול.`
+  },
+  {
+    chapter: "פרק י׳ – הדוש",
+    image: "images/page10.jpg",
+    text: `עמדתי מתחת למים.
+לא צרחתי.
+
+רק בכיתי.
+מים לא שוטפים בגידה.
+
+הם רק חושפים אותה.`
+  },
+  {
+    chapter: 'פרק י"א – המסקנה',
+    image: "images/page11.jpg",
+    text: `היום אני יודע משהו.
+לפעמים אתה חושב שאתה מתקדם —
+
+אבל אתה רק מחליף כאב בכאב אחר.
+ולפעמים
+
+הדבר הכי קשה
+
+זה לבחור בעצמך.`
+  }
+];
+
+const N = PAGES.length;
+let current = -1;
+
+// ── Build page DOM ──
+const wrap = document.getElementById('pages-wrap');
+
+PAGES.forEach((pg, i) => {
+  const div = document.createElement('div');
+  div.className = 'page';
+  div.id = 'pg' + i;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'page-header';
+  header.innerHTML =
+    `<span class="ch-title">${pg.chapter}</span>` +
+    `<span class="pg-num">${i + 1} / ${N}</span>` +
+    `<span class="bk-title">עלילות אדיר, קאמי ועכברושית</span>`;
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'page-body';
+
+  const imgDiv = document.createElement('div');
+  imgDiv.className = 'page-image';
+  const img = document.createElement('img');
+  img.src = pg.image;
+  img.alt = pg.chapter;
+  img.loading = 'lazy';
+  // FIX 1: hide broken image icon, show dark background instead
+  img.onerror = function() { this.style.display = 'none'; };
+  imgDiv.appendChild(img);
+
+  const textDiv = document.createElement('div');
+  textDiv.className = 'page-text';
+  const p = document.createElement('p');
+  p.textContent = pg.text;
+  textDiv.appendChild(p);
+
+  body.appendChild(imgDiv);
+  body.appendChild(textDiv);
+
+  // Nav — FIX 2: הבא on LEFT, הקודם on RIGHT
+  const nav = document.createElement('div');
+  nav.className = 'page-nav';
+
+  // LEFT button = הבא (next)
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'nav-btn';
+  nextBtn.textContent = 'הבא ←';
+  if (i === N - 1) nextBtn.disabled = true;
+  nextBtn.addEventListener('click', () => go(current + 1));
+
+  const dotsDiv = document.createElement('div');
+  dotsDiv.className = 'dots';
+  dotsDiv.id = 'dots' + i;
+
+  // RIGHT button = הקודם (prev)
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'nav-btn';
+  prevBtn.textContent = '→ הקודם';
+  if (i === 0) prevBtn.disabled = true;
+  prevBtn.addEventListener('click', () => go(current - 1));
+
+  nav.appendChild(nextBtn);   // LEFT
+  nav.appendChild(dotsDiv);
+  nav.appendChild(prevBtn);   // RIGHT
+
+  div.appendChild(header);
+  div.appendChild(body);
+  div.appendChild(nav);
+  wrap.appendChild(div);
+});
+
+// ── Build dots ──
+PAGES.forEach((_, i) => {
+  const container = document.getElementById('dots' + i);
+  PAGES.forEach((_, j) => {
+    const d = document.createElement('span');
+    d.className = 'dot' + (j === i ? ' on' : '');
+    d.title = `עמוד ${j + 1}`;
+    d.addEventListener('click', () => go(j));
+    container.appendChild(d);
+  });
+});
+
+// ── Navigation ──
+function startBook() {
+  document.getElementById('cover').style.display = 'none';
+  go(0);
+}
+
+// FIX 3: no jump — remove old page immediately, fade in new page
+function go(n) {
+  if (n < 0 || n >= N) return;
+
+  if (current >= 0) {
+    const old = document.getElementById('pg' + current);
+    old.classList.remove('visible', 'active'); // instant removal, no layout shift
+  }
+
+  current = n;
+  const pg = document.getElementById('pg' + n);
+  pg.classList.add('active');
+  // double rAF ensures the display:flex paint happens before opacity transition
+  requestAnimationFrame(() => requestAnimationFrame(() => pg.classList.add('visible')));
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => {
+  if (current < 0) return;
+  if (e.key === 'ArrowLeft')  go(current + 1); // ← = next in Hebrew book
+  if (e.key === 'ArrowRight') go(current - 1); // → = prev in Hebrew book
+});
+</script>
+
+</body>
+</html>
